@@ -33,6 +33,11 @@ type TemperatureData struct {
 func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	lat, long, apiKey := ps.ByName("lat"), ps.ByName("lon"), ps.ByName("apiKey")
+	if len(lat) == 0 || len(long) == 0 || len(apiKey) == 0 {
+		fmt.Println("empty input! error!")
+		http.Error(w, "empty input!", 422)
+		return
+	}
 	url := fmt.Sprintf("https://api.openweathermap.org/data/2.5/weather?lat=%s&lon=%s&appid=%s", lat, long, apiKey)
 
 	//set return types
@@ -43,21 +48,34 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("error!", err)
+		http.Error(w, "error in GET request to weather API: ", 422)
+		return
 	}
 
 	//read response
 	response, err := io.ReadAll(resp.Body)
 	fmt.Println("response: ", string(response))
-
+	if err != nil {
+		http.Error(w, "failed reading response from weather api: ", 422)
+		return
+	}
 	// parse and return weather conditions
 	var weather CurrentWeather
 
 	parseErr := json.Unmarshal(response, &weather)
 	if parseErr != nil {
 		fmt.Println("PARSE ERROR: ", parseErr)
-		w.WriteHeader(422)
+		http.Error(w, "Parse error unmarshalling json!: ", 422)
+		return
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println("err when closing body: ", err)
+			http.Error(w, "err when closing body: ", 422)
+			return
+		}
+	}(resp.Body)
 
 	//final temp output should be some general take on temp (aka its hot)
 	//the temp output from the weather api is in kelvin btw
@@ -87,7 +105,9 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	returnBytes := append(byteArr[:], byteArr2[:]...)
 	_, err = w.Write(returnBytes)
 	if err != nil {
-		w.WriteHeader(422)
+		fmt.Print("error writing bytes to header: ", err)
+		http.Error(w, "error writing bytes to header", 422)
+		return
 	}
 }
 func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

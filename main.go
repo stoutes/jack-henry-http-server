@@ -42,7 +42,6 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	//set return types
 	w.Header().Set("Content-Type", "application/text-plain")
-	w.WriteHeader(http.StatusCreated)
 
 	//GET op
 	resp, err := http.Get(url)
@@ -57,6 +56,7 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	fmt.Println("response: ", string(response))
 	if err != nil {
 		http.Error(w, "failed reading response from weather api: ", 422)
+		w.WriteHeader(422)
 		return
 	}
 	// parse and return weather conditions
@@ -66,6 +66,13 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if parseErr != nil {
 		fmt.Println("PARSE ERROR: ", parseErr)
 		http.Error(w, "Parse error unmarshalling json!: ", 422)
+		w.WriteHeader(422)
+		return
+	}
+	if weather.LocationData == nil {
+		fmt.Println("PARSE ERROR: ", parseErr)
+		http.Error(w, "Bad response from weather API!", 422)
+		w.WriteHeader(422)
 		return
 	}
 	defer func(Body io.ReadCloser) {
@@ -73,6 +80,7 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		if err != nil {
 			fmt.Println("err when closing body: ", err)
 			http.Error(w, "err when closing body: ", 422)
+			w.WriteHeader(422)
 			return
 		}
 	}(resp.Body)
@@ -95,14 +103,16 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		temperatureOutput = "Couldn't decide what to output *shrug*"
 	}
 
-	//now append the weather condition and temp
-	var finalOutput []string
-	finalOutput = append(finalOutput, temperatureOutput)
-	finalOutput = append(finalOutput, weather.LocationData[0].Description)
+	// now append the weather condition and temp
 	// have to convert into byte array for response payload
-	byteArr := []byte(finalOutput[0])
-	byteArr2 := []byte(finalOutput[1])
-	returnBytes := append(byteArr[:], byteArr2[:]...)
+	returnBytes := []byte(temperatureOutput)
+	if weather.LocationData != nil && len(weather.
+		LocationData) > 0 {
+		returnBytes = append(returnBytes, []byte(weather.LocationData[0].Description)...)
+	} else {
+		returnBytes = append(returnBytes, []byte("No additional data available")...)
+	}
+	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(returnBytes)
 	if err != nil {
 		fmt.Print("error writing bytes to header: ", err)

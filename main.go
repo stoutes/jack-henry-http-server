@@ -35,7 +35,7 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	lat, long, apiKey := ps.ByName("lat"), ps.ByName("lon"), ps.ByName("apiKey")
 	if len(lat) == 0 || len(long) == 0 || len(apiKey) == 0 {
 		fmt.Println("empty input! error!")
-		http.Error(w, "empty input!", 422)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	url := fmt.Sprintf("https://api.openweathermap.org/data/2.5/weather?lat=%s&lon=%s&appid=%s", lat, long, apiKey)
@@ -47,7 +47,7 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("error!", err)
-		http.Error(w, "error in GET request to weather API: ", 422)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -56,7 +56,7 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	fmt.Println("response: ", string(response))
 	if err != nil {
 		http.Error(w, "failed reading response from weather api: ", 422)
-		w.WriteHeader(422)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 	// parse and return weather conditions
@@ -66,21 +66,21 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if parseErr != nil {
 		fmt.Println("PARSE ERROR: ", parseErr)
 		http.Error(w, "Parse error unmarshalling json!: ", 422)
-		w.WriteHeader(422)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 	if weather.LocationData == nil {
 		fmt.Println("PARSE ERROR: ", parseErr)
 		http.Error(w, "Bad response from weather API!", 422)
-		w.WriteHeader(422)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			fmt.Println("err when closing body: ", err)
-			http.Error(w, "err when closing body: ", 422)
-			w.WriteHeader(422)
+			http.Error(w, "Error when closing body: ", 422)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
 	}(resp.Body)
@@ -112,11 +112,12 @@ func getWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	} else {
 		returnBytes = append(returnBytes, []byte("No additional data available")...)
 	}
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(returnBytes)
 	if err != nil {
 		fmt.Print("error writing bytes to header: ", err)
-		http.Error(w, "error writing bytes to header", 422)
+		http.Error(w, "Error writing bytes to response header", 422)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 }

@@ -6,8 +6,8 @@ import (
 )
 
 // go test -v
-// go test -run TestDownload/statusok -v
-// go test -run TestDownload/statusnotfound -v
+// go test -run TestGetDownload/statusok -v
+// go test -run TestGetDownload/statusnotfound -v
 
 const succeed = "\u2713"
 const failed = "\u2717"

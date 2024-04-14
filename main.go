@@ -130,7 +130,7 @@ func main() {
 
 	router := httprouter.New()
 	router.GET("/", Index)
-	router.GET("/getWeatherReport/:lat/:lon/:apiKey", getWeatherReport)
+	router.GET("/getWeatherReport/:lat/:lon/:apiKey/", getWeatherReport)
 	log.Fatal(http.ListenAndServe(":6666", router))
 
 }

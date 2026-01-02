@@ -1,4 +1,4 @@
-module main
+module jack-henry-http-server
 
 go 1.22.0
 

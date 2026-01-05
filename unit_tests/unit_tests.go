@@ -15,7 +15,7 @@ const failed = "\u2717"
 // TestGetDownload validates the http Get function can download content.
 func TestGetDownload(t *testing.T) {
 	statusCode := 200
-	url := "http://localhost:6666/getWeatherReport/666/666/666"
+	url := "http://localhost:9000/getWeatherReport/77/49"
 	t.Log("Given the need to test downloading content.")
 	{
 		testID := 0

@@ -57,38 +57,38 @@ func GetWeatherReport(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	pointURL := fmt.Sprintf("https://api.weather.gov/points/%s,%s", lat, long)
 	resp, err := makeNWSRequest(pointURL, userAgent)
 	if err != nil {
-		http.Error(w, "Failed to fetch weather grid point", http.StatusUnprocessableEntity)
+		http.Error(w, "Failed to fetch weather grid point", http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, "Location may be outside US", http.StatusUnprocessableEntity)
+		http.Error(w, "Location may be outside US", http.StatusNotFound)
 		return
 	}
 
 	var pointData NWSPointResponse
 	if err := json.NewDecoder(resp.Body).Decode(&pointData); err != nil {
-		http.Error(w, "Failed to parse grid point data", http.StatusUnprocessableEntity)
+		http.Error(w, "Failed to parse grid point data", http.StatusInternalServerError)
 		return
 	}
 
 	// Get forecast
 	forecastResp, err := makeNWSRequest(pointData.Properties.Forecast, userAgent)
 	if err != nil {
-		http.Error(w, "Failed to fetch forecast", http.StatusUnprocessableEntity)
+		http.Error(w, "Failed to fetch forecast", http.StatusInternalServerError)
 		return
 	}
 	defer forecastResp.Body.Close()
 
 	var forecast NWSForecastResponse
 	if err := json.NewDecoder(forecastResp.Body).Decode(&forecast); err != nil {
-		http.Error(w, "Failed to parse forecast data", http.StatusUnprocessableEntity)
+		http.Error(w, "Failed to parse forecast data", http.StatusInternalServerError)
 		return
 	}
 
 	if len(forecast.Properties.Periods) == 0 {
-		http.Error(w, "No forecast data available", http.StatusUnprocessableEntity)
+		http.Error(w, "No forecast data available", http.StatusNotFound)
 		return
 	}
 

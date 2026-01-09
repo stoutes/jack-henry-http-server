@@ -1,4 +1,4 @@
-package unit_tests
+package main
 
 import (
 	"net/http"
@@ -15,7 +15,7 @@ const failed = "\u2717"
 // TestGetDownload validates the http Get function can download content.
 func TestGetDownload(t *testing.T) {
 	statusCode := 200
-	url := "http://localhost:9000/getWeatherReport/77/49"
+	url := "http://localhost:9000/getWeatherReport/35.39/-100.46"
 	t.Log("Given the need to test downloading content.")
 	{
 		testID := 0
